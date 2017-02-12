@@ -17,6 +17,17 @@ type testData struct {
 func setTestData() []testData {
 	var testSet []testData
 	testSet = []testData{
+		/*
+			testData{testSQL: `select count(*) from tbl;`,
+				expect: ast.SelectStmt{
+					Begin: 1,
+					// TODO Set Value in ast.Column
+					Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{&ast.Column{Alias: "", EndPos: 16}}},
+					From: ast.FromClause{Begin: 17, Tables: []*ast.Table{&ast.Table{
+						Value: ast.TableBasicLit{Begin: 17, Kind: token.IDENT, Value: "tbl"}, Alias: "", EndPos: 25}}},
+					Where: ast.WhereClause{Exists: false}},
+			},
+		*/
 		testData{
 			testSQL: `  select id, username from id_mst, user_mst where id_mst.id = user_mst.id and user_mst.dt > '2015-12-01';`,
 			expect: ast.SelectStmt{
@@ -54,37 +65,37 @@ func setTestData() []testData {
 					Exists: true,
 					Begin:  45,
 					CondExpr: ast.BinaryExpr{
-						X: ast.Ident{
-							LitPos:  51,
-							TblName: "id_mst",
-							Lit:     "id",
-							Kind:    token.IDENT,
-						},
-						OpPos: 61,
-						Op:    token.EQL,
-						Y: ast.BinaryExpr{
+						X: ast.BinaryExpr{
 							X: ast.Ident{
+								LitPos:  51,
+								TblName: "id_mst",
+								Lit:     "id",
+								Kind:    token.IDENT,
+							},
+							OpPos: 61,
+							Op:    token.EQL,
+							Y: ast.Ident{
 								LitPos:  63,
 								TblName: "user_mst",
 								Lit:     "id",
 								Kind:    token.IDENT,
 							},
-							OpPos: 75,
-							Op:    token.AND,
-							Y: ast.BinaryExpr{
-								X: ast.Ident{
-									LitPos:  79,
-									TblName: "user_mst",
-									Lit:     "dt",
-									Kind:    token.IDENT,
-								},
-								OpPos: 91,
-								Op:    token.GTR,
-								Y: ast.BasicLit{
-									Begin: 93,
-									Value: "'2015-12-01'",
-									Kind:  token.STRING,
-								},
+						},
+						OpPos: 75,
+						Op:    token.AND,
+						Y: ast.BinaryExpr{
+							X: ast.Ident{
+								LitPos:  79,
+								TblName: "user_mst",
+								Lit:     "dt",
+								Kind:    token.IDENT,
+							},
+							OpPos: 91,
+							Op:    token.GTR,
+							Y: ast.BasicLit{
+								Begin: 93,
+								Value: "'2015-12-01'",
+								Kind:  token.STRING,
 							},
 						},
 					},
@@ -185,6 +196,7 @@ func TestParseFile(t *testing.T) {
 				&ast.Table{
 					Value: ast.TableBasicLit{
 						Begin: 15,
+						Kind:  token.IDENT,
 						Value: "table1",
 					},
 					Alias:  "",
@@ -234,43 +246,59 @@ func clauseEqualTest(actual, expect ast.Clause, t *testing.T) {
 
 	case ast.FromClause:
 		actualClause, ok := actual.(ast.FromClause)
-		if ok {
-			if expectClause.Pos() != actualClause.Pos() {
-				t.Fatalf(
-					"FromClause position is different. actual: %d, expect: %d.",
-					actualClause.Pos(),
-					expectClause.Pos(),
-				)
-			}
-
-		} else {
+		if !ok {
 			t.Fatalf("actual type is not FromClause. actual: %T.", actual)
 		}
+		t.Log("FromClause pos/end check")
+		posEqualTest(actualClause, expectClause, t)
+		tablesEqualTest(actualClause.Tables, expectClause.Tables, t)
+
 	case ast.WhereClause:
 		actualClause, ok := actual.(ast.WhereClause)
-		if ok {
-			if actualClause.Exists != expectClause.Exists {
-				t.Fatalf(
-					"WhereClause exist check fail. actual: %v, expected: %v.",
-					actualClause.Exists,
-					expectClause.Exists,
-				)
-			}
-			if expectClause.Pos() != actualClause.Pos() {
-				t.Fatalf(
-					"WhereClause position is different. actual: %d, expect: %d.",
-					actualClause.Pos(),
-					expectClause.Pos(),
-				)
-			}
-
-		} else {
+		if !ok {
 			t.Fatalf("actual type is not WhereClause. actual: %T.", actual)
 		}
 
+		if actualClause.Exists != expectClause.Exists {
+			t.Fatalf(
+				"WhereClause exist check fail. actual: %v, expected: %v.",
+				actualClause.Exists,
+				expectClause.Exists,
+			)
+		}
+		posEqualTest(actualClause, expectClause, t)
+		if actualClause.Exists {
+			exprEqualTest(actualClause.CondExpr, expectClause.CondExpr, t)
+		}
 	default:
 		t.Fatalf("Expect's top level type is not correct.")
 	}
+}
+
+func tablesEqualTest(actual, expect []*ast.Table, t *testing.T) {
+	// size check
+	if len(actual) != len(expect) {
+		t.Fatalf(
+			"tables sizes are different. actual: %d, expect: %d.",
+			len(actual),
+			len(expect),
+		)
+	}
+
+	for ix, actualTbl := range actual {
+		posEqualTest(actualTbl, expect[ix], t)
+
+		if actualTbl.Alias != expect[ix].Alias {
+			t.Fatalf(
+				"table Alias is incorrect. actual: %s, expect: %s.",
+				actualTbl.Alias,
+				expect[ix].Alias,
+			)
+		}
+
+		exprEqualTest(actualTbl.Value, expect[ix].Value, t)
+	}
+
 }
 
 func columnsEqualTest(actual, expect []*ast.Column, t *testing.T) {
@@ -301,14 +329,22 @@ func columnsEqualTest(actual, expect []*ast.Column, t *testing.T) {
 
 func exprEqualTest(actual, expect ast.Expr, t *testing.T) {
 	t.Log("Expr pos/end check.")
+	var actualStruct, expectStruct string
+	if tp := reflect.TypeOf(actual); tp.Kind() == reflect.Ptr {
+		actualStruct = "*" + tp.Elem().Name()
+		expectStruct = "*" + reflect.TypeOf(expect).Elem().Name()
+	} else {
+		actualStruct = tp.Name()
+		expectStruct = reflect.TypeOf(expect).Name()
+
+	}
+	typemsg := fmt.Sprintf("actual type %s, expect: %s", actualStruct, expectStruct)
 	posEqualTest(actual, expect, t)
 	switch expectExpr := expect.(type) {
 	case ast.BasicLit:
 		actualExpr, ok := actual.(ast.BasicLit)
 		if !ok {
-			tp := reflect.TypeOf(actual)
-			msg := fmt.Sprintf("actual type %s, expect: %v", tp.Name(), expectExpr)
-			t.Fatal("actual type is not ast.BasicLit. " + msg)
+			t.Fatal("actual type is not ast.BasicLit. " + typemsg)
 		}
 		if actualExpr.Kind != expectExpr.Kind {
 			t.Fatalf(
@@ -328,9 +364,7 @@ func exprEqualTest(actual, expect ast.Expr, t *testing.T) {
 	case ast.Ident:
 		actualExpr, ok := actual.(ast.Ident)
 		if !ok {
-			tp := reflect.TypeOf(actual)
-			msg := fmt.Sprintf("actual type %s, expect: %v", tp.Name(), expectExpr)
-			t.Fatal("actual type is not ast.Ident. " + msg)
+			t.Fatal("actual type is not ast.Ident. " + typemsg)
 		}
 		if actualExpr.TblName != expectExpr.TblName {
 			t.Fatalf(
@@ -353,9 +387,37 @@ func exprEqualTest(actual, expect ast.Expr, t *testing.T) {
 				expectExpr.Lit,
 			)
 		}
-
+	case ast.BinaryExpr:
+		actualExpr, ok := actual.(ast.BinaryExpr)
+		if !ok {
+			t.Fatal("actual type is not ast.Ident. " + typemsg)
+		}
+		if actualExpr.Op != expectExpr.Op {
+			t.Fatalf("BinaryExpr op is incorrect. actual: %s, expect: %s.", actualExpr.Op, expectExpr.Op)
+		}
+		exprEqualTest(actualExpr.X, expectExpr.X, t)
+		exprEqualTest(actualExpr.Y, expectExpr.Y, t)
+	case ast.TableBasicLit:
+		actualExpr, ok := actual.(ast.TableBasicLit)
+		if !ok {
+			t.Fatal("actual type is not ast.TableBasicLit. " + typemsg)
+		}
+		if actualExpr.Kind != expectExpr.Kind {
+			t.Fatalf(
+				"TableBasicLit kind incorrect. actual: %s, expected: %s.",
+				actualExpr.Kind.String(),
+				expectExpr.Kind.String(),
+			)
+		}
+		if actualExpr.Value != expectExpr.Value {
+			t.Fatalf(
+				"TableBasicLit value is incorrect. actual: %s, expected: %s.",
+				actualExpr.Value,
+				expectExpr.Value,
+			)
+		}
 	default:
-		t.Fatal("Unexpected type the expected expr has.")
+		t.Fatal("Unexpected type the expected expr has. " + typemsg)
 	}
 
 }

@@ -35,6 +35,10 @@ type testSet struct {
 
 func TestScan(t *testing.T) {
 	ts := []testSet{
+		testSet{given: []byte("()"), expect: []scanSet{
+			scanSet{tok: token.LPAREN, pos: 1, lit: "("},
+			scanSet{tok: token.RPAREN, pos: 2, lit: ")"},
+		}},
 		testSet{given: []byte("> ="), expect: []scanSet{
 			scanSet{tok: token.GTR, pos: 1, lit: ">"},
 			scanSet{tok: token.EQL, pos: 3, lit: "="},

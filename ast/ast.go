@@ -104,45 +104,23 @@ func (w WhereClause) clauseNode() {}
 
 // Pos is implementation of Node interface.
 func (w WhereClause) Pos() token.Pos {
+	if !w.Exists {
+		return 0
+	}
 	return w.Begin
 }
 
 // End is implementation of Node interface.
 func (w WhereClause) End() token.Pos {
+	if !w.Exists {
+		return 0
+	}
 	return w.CondExpr.End()
-}
-
-// TableList represents tables in from clause.
-type TableList struct {
-	Node
-	Tables []Table
-}
-
-// Size returns the size of table list.
-func (t TableList) Size() int {
-	return len(t.Tables)
-}
-
-// Pos returns the position of TableList.
-func (t TableList) Pos() token.Pos {
-	if t.Size() == 0 {
-		panic("At least 1 tables must exist.")
-	}
-	return t.Tables[0].Pos()
-}
-
-// End returns the end position of TableList.
-func (t TableList) End() token.Pos {
-	n := t.Size()
-	if n == 0 {
-		panic("At least 1 tables must exist.")
-	}
-	return t.Tables[n-1].End()
 }
 
 // Table contains a table factors.
 type Table struct {
-	Value  TableExpr
+	Value  Expr
 	Alias  string
 	EndPos token.Pos
 }

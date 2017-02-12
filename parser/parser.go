@@ -3,6 +3,7 @@ package parser
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/Neetless/sqlfmt/ast"
@@ -95,19 +96,6 @@ func (p *parser) parseStmt() (ast.Stmt, error) {
 		stmt := ast.SelectStmt{
 			Begin: pos,
 		}
-		/*
-			clus, err := p.parseClause()
-			if err != nil {
-				return stmt, err
-			}
-
-			selectClus, ok := clus.(ast.SelectClause)
-			if !ok {
-				e := WrongAstTypeError{fmt.Sprintf("an AST parse error. SelectClause is expected at offset: %d\n", p.pos)}
-				return stmt, e
-			}
-			stmt.Select = selectClus
-		*/
 		slctstmt := p.parseSelect()
 		stmt.Select = slctstmt
 
@@ -161,28 +149,35 @@ func (p *parser) parseTableList() []*ast.Table {
 L:
 	for {
 		switch p.tok {
-		case token.IDENT:
-			v := ast.TableBasicLit{Begin: p.pos, Value: p.lit, Kind: p.tok}
-			p.next()
-			var alias string
-			var endpos token.Pos
-			if p.expect(token.ALIAS) {
-				alias = p.lit
-				endpos = p.pos + token.Pos(len(p.lit))
-				p.next()
-			} else {
-				endpos = v.End()
-			}
-			tables = append(tables, &ast.Table{Value: v, Alias: alias, EndPos: endpos})
-
 		case token.COMMA:
 			p.next()
 			continue
-		default:
+		// TODO implement token.GROUPBY, token.ORDERBY
+		case token.WHERE, token.EOF:
 			break L
+		default:
+			tbl := p.parseTable()
+			tables = append(tables, &tbl)
 		}
 	}
+	log.Printf("return tables size %d\n", len(tables))
 	return tables
+}
+
+func (p *parser) parseTable() ast.Table {
+	expr := p.parseTableExpr()
+	alias := ""
+	endPos := expr.End()
+	// TODO implement implicit alias
+	if p.expect(token.ALIAS) {
+		alias = p.lit
+		endPos = p.pos + token.Pos(len(alias))
+	}
+	return ast.Table{Value: expr, Alias: alias, EndPos: endPos}
+}
+
+func (p *parser) parseTableExpr() ast.Table {
+
 }
 
 func (p *parser) parseWhere() ast.WhereClause {
