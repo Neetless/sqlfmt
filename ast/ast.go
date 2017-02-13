@@ -184,6 +184,27 @@ type Expr interface {
 	exprNode()
 }
 
+// CallExpr represent function call expression.
+type CallExpr struct {
+	Begin    token.Pos
+	FuncName string
+	Lparen   token.Pos
+	Args     []Expr
+	Rparen   token.Pos
+}
+
+func (c CallExpr) exprNode() {}
+
+// Pos returns initial position according to offset.
+func (c CallExpr) Pos() token.Pos {
+	return c.Begin
+}
+
+// End returns last position according to offset.
+func (c CallExpr) End() token.Pos {
+	return c.Rparen + 1
+}
+
 // BinaryExpr represents a binary expression.
 type BinaryExpr struct {
 	X     Expr

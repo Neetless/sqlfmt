@@ -17,17 +17,21 @@ type testData struct {
 func setTestData() []testData {
 	var testSet []testData
 	testSet = []testData{
-		/*
-			testData{testSQL: `select count(*) from tbl;`,
-				expect: ast.SelectStmt{
-					Begin: 1,
-					// TODO Set Value in ast.Column
-					Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{&ast.Column{Alias: "", EndPos: 16}}},
-					From: ast.FromClause{Begin: 17, Tables: []*ast.Table{&ast.Table{
-						Value: ast.TableBasicLit{Begin: 17, Kind: token.IDENT, Value: "tbl"}, Alias: "", EndPos: 25}}},
-					Where: ast.WhereClause{Exists: false}},
-			},
-		*/
+		testData{testSQL: `select count(*) from tbl;`,
+			expect: ast.SelectStmt{
+				Begin: 1,
+				Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{&ast.Column{
+					Value: ast.CallExpr{Begin: 8,
+						FuncName: "count",
+						Lparen:   13,
+						Args:     []ast.Expr{ast.BasicLit{Begin: 14, Value: "*", Kind: token.ASTA}},
+						Rparen:   15},
+					Alias:  "",
+					EndPos: 16}}},
+				From: ast.FromClause{Begin: 17, Tables: []*ast.Table{&ast.Table{
+					Value: ast.TableBasicLit{Begin: 22, Kind: token.IDENT, Name: "tbl"}, Alias: "", EndPos: 25}}},
+				Where: ast.WhereClause{Exists: false}},
+		},
 		testData{
 			testSQL: `  select id, username from id_mst, user_mst where id_mst.id = user_mst.id and user_mst.dt > '2015-12-01';`,
 			expect: ast.SelectStmt{
@@ -429,13 +433,27 @@ func exprEqualTest(actual, expect ast.Expr, t *testing.T) {
 	case ast.BinaryExpr:
 		actualExpr, ok := actual.(ast.BinaryExpr)
 		if !ok {
-			t.Fatal("actual type is not ast.Ident. " + typemsg)
+			t.Fatal("actual type is not ast.BinaryExpr. " + typemsg)
 		}
 		if actualExpr.Op != expectExpr.Op {
 			t.Fatalf("BinaryExpr op is incorrect. actual: %s, expect: %s.", actualExpr.Op, expectExpr.Op)
 		}
 		exprEqualTest(actualExpr.X, expectExpr.X, t)
 		exprEqualTest(actualExpr.Y, expectExpr.Y, t)
+	case ast.CallExpr:
+		actualExpr, ok := actual.(ast.CallExpr)
+		if !ok {
+			t.Fatal("actual type is not ast.BinaryExpr. " + typemsg)
+		}
+		if actualExpr.FuncName != expectExpr.FuncName {
+			t.Fatalf("CallExpr FuncName is incorrect. actual: %s, expect: %s.", actualExpr.FuncName, expectExpr.FuncName)
+		}
+		if len(actualExpr.Args) != len(expectExpr.Args) {
+			t.Fatalf("CallExpr Args size is incorrect. actual: %d, expect: %d.", len(actualExpr.Args), len(expectExpr.Args))
+		}
+		for ix, actualArg := range actualExpr.Args {
+			exprEqualTest(actualArg, expectExpr.Args[ix], t)
+		}
 	default:
 		t.Fatal("Unexpected type the expected expr has. " + typemsg)
 	}

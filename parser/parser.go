@@ -287,6 +287,31 @@ func (p *parser) parsePrimaryExpr() ast.Expr {
 			if !p.expect(token.IDENT) {
 				panic("expect column name after table name. but got " + p.tok.String())
 			}
+			// Maybe function name
+		} else if p.tok == token.LPAREN {
+			lparen := p.pos
+			var rparen token.Pos
+			var args []ast.Expr
+			p.next()
+		L:
+			for {
+				switch p.tok {
+				case token.RPAREN:
+					rparen = p.pos
+					p.next()
+					break L
+				case token.COMMA:
+					p.next()
+					continue
+				case token.EOF:
+					panic("while parsing CallExpr, got EOF.")
+				default:
+					args = append(args, p.parseExpr())
+				}
+
+			}
+
+			return ast.CallExpr{Begin: pos, FuncName: lit, Lparen: lparen, Args: args, Rparen: rparen}
 		}
 
 		return ast.Ident{TblName: tbl, LitPos: pos, Kind: kind, Lit: lit}
