@@ -83,10 +83,10 @@ func (p *printer) fromClause(node ast.FromClause) {
 
 }
 
-func (p *printer) columnList(node ast.ColumnList) {
-	for i, v := range node.Cols {
+func (p *printer) columnList(node []*ast.Column) {
+	for i, v := range node {
 		switch n := v.Value.(type) {
-		case ast.ColumnLit:
+		case ast.BasicLit:
 			expr := []byte(n.Kind.String())
 			p.output = append(
 				p.output,
@@ -98,9 +98,9 @@ func (p *printer) columnList(node ast.ColumnList) {
 		}
 
 		// when there are columns and v in this loop is not last, add camma.
-		if i < len(node.Cols)-1 {
+		if i < len(node)-1 {
 			p.output = append(p.output, []byte(",")...)
-		} else if i == len(node.Cols)-1 { // when v is last column, adjust indent.
+		} else if i == len(node)-1 { // when v is last column, adjust indent.
 
 			p.indent--
 		}
@@ -120,7 +120,7 @@ func (p *printer) tableList(tables []*ast.Table) {
 		case ast.TableBasicLit:
 			p.output = append(
 				p.output,
-				[]byte(n.Value)...,
+				[]byte(n.Name)...,
 			)
 			p.alias(v.Alias)
 		}

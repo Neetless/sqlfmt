@@ -50,12 +50,12 @@ func setTestData() []testData {
 				From: ast.FromClause{
 					Begin: 23,
 					Tables: []*ast.Table{
-						&ast.Table{Value: ast.TableBasicLit{Begin: 28, Kind: token.IDENT, Value: "id_mst"},
+						&ast.Table{Value: ast.TableBasicLit{Begin: 28, Kind: token.IDENT, Name: "id_mst"},
 							Alias:  "",
 							EndPos: 34,
 						},
 						&ast.Table{
-							Value:  ast.TableBasicLit{Begin: 36, Kind: token.IDENT, Value: "user_mst"},
+							Value:  ast.TableBasicLit{Begin: 36, Kind: token.IDENT, Name: "user_mst"},
 							Alias:  "",
 							EndPos: 44,
 						},
@@ -129,7 +129,7 @@ func setTestData() []testData {
 							Value: ast.TableBasicLit{
 								Begin: 38,
 								Kind:  token.IDENT,
-								Value: "tbl1",
+								Name:  "tbl1",
 							},
 							Alias:  "user",
 							EndPos: 50,
@@ -138,7 +138,7 @@ func setTestData() []testData {
 							Value: ast.TableBasicLit{
 								Begin: 52,
 								Kind:  token.IDENT,
-								Value: "tbl2",
+								Name:  "tbl2",
 							},
 							Alias:  "item",
 							EndPos: 64,
@@ -197,7 +197,7 @@ func TestParseFile(t *testing.T) {
 					Value: ast.TableBasicLit{
 						Begin: 15,
 						Kind:  token.IDENT,
-						Value: "table1",
+						Name:  "table1",
 					},
 					Alias:  "",
 					EndPos: 21,
@@ -296,7 +296,46 @@ func tablesEqualTest(actual, expect []*ast.Table, t *testing.T) {
 			)
 		}
 
-		exprEqualTest(actualTbl.Value, expect[ix].Value, t)
+		tableExprEqualTest(actualTbl.Value, expect[ix].Value, t)
+	}
+
+}
+
+func tableExprEqualTest(actual, expect ast.TableExpr, t *testing.T) {
+	t.Log("TableExpr pos/end check.")
+	var actualStruct, expectStruct string
+	if tp := reflect.TypeOf(actual); tp.Kind() == reflect.Ptr {
+		actualStruct = "*" + tp.Elem().Name()
+		expectStruct = "*" + reflect.TypeOf(expect).Elem().Name()
+	} else {
+		actualStruct = tp.Name()
+		expectStruct = reflect.TypeOf(expect).Name()
+
+	}
+	typemsg := fmt.Sprintf("actual type %s, expect: %s", actualStruct, expectStruct)
+	posEqualTest(actual, expect, t)
+	switch expectExpr := expect.(type) {
+	case ast.TableBasicLit:
+		actualExpr, ok := actual.(ast.TableBasicLit)
+		if !ok {
+			t.Fatal("actual type is not ast.TableBasicLit. " + typemsg)
+		}
+		if actualExpr.Kind != expectExpr.Kind {
+			t.Fatalf(
+				"TableBasicLit kind incorrect. actual: %s, expected: %s.",
+				actualExpr.Kind.String(),
+				expectExpr.Kind.String(),
+			)
+		}
+		if actualExpr.Name != expectExpr.Name {
+			t.Fatalf(
+				"TableBasicLit value is incorrect. actual: %s, expected: %s.",
+				actualExpr.Name,
+				expectExpr.Name,
+			)
+		}
+	default:
+		t.Fatal("Unexpected type the expected tableExpr has. " + typemsg)
 	}
 
 }
@@ -397,25 +436,6 @@ func exprEqualTest(actual, expect ast.Expr, t *testing.T) {
 		}
 		exprEqualTest(actualExpr.X, expectExpr.X, t)
 		exprEqualTest(actualExpr.Y, expectExpr.Y, t)
-	case ast.TableBasicLit:
-		actualExpr, ok := actual.(ast.TableBasicLit)
-		if !ok {
-			t.Fatal("actual type is not ast.TableBasicLit. " + typemsg)
-		}
-		if actualExpr.Kind != expectExpr.Kind {
-			t.Fatalf(
-				"TableBasicLit kind incorrect. actual: %s, expected: %s.",
-				actualExpr.Kind.String(),
-				expectExpr.Kind.String(),
-			)
-		}
-		if actualExpr.Value != expectExpr.Value {
-			t.Fatalf(
-				"TableBasicLit value is incorrect. actual: %s, expected: %s.",
-				actualExpr.Value,
-				expectExpr.Value,
-			)
-		}
 	default:
 		t.Fatal("Unexpected type the expected expr has. " + typemsg)
 	}

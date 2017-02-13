@@ -120,7 +120,7 @@ func (w WhereClause) End() token.Pos {
 
 // Table contains a table factors.
 type Table struct {
-	Value  Expr
+	Value  TableExpr
 	Alias  string
 	EndPos token.Pos
 }
@@ -145,10 +145,9 @@ type TableExpr interface {
 type TableBasicLit struct {
 	Begin token.Pos
 	Kind  token.Token
-	Value string
+	Name  string
 }
 
-func (t TableBasicLit) exprNode()      {}
 func (t TableBasicLit) tableExprNode() {}
 
 // Pos is for Nore interface implementetion.
@@ -158,7 +157,7 @@ func (t TableBasicLit) Pos() token.Pos {
 
 // End is for Node interface implementation.
 func (t TableBasicLit) End() token.Pos {
-	return t.Begin + token.Pos(len(t.Value))
+	return t.Begin + token.Pos(len(t.Name))
 }
 
 // Column represents a column of table.

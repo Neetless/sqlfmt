@@ -3,7 +3,6 @@ package parser
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"github.com/Neetless/sqlfmt/ast"
@@ -153,14 +152,13 @@ L:
 			p.next()
 			continue
 		// TODO implement token.GROUPBY, token.ORDERBY
-		case token.WHERE, token.EOF:
+		case token.WHERE, token.EOF, token.SEMICOLON:
 			break L
 		default:
 			tbl := p.parseTable()
 			tables = append(tables, &tbl)
 		}
 	}
-	log.Printf("return tables size %d\n", len(tables))
 	return tables
 }
 
@@ -172,12 +170,24 @@ func (p *parser) parseTable() ast.Table {
 	if p.expect(token.ALIAS) {
 		alias = p.lit
 		endPos = p.pos + token.Pos(len(alias))
+		p.next()
 	}
 	return ast.Table{Value: expr, Alias: alias, EndPos: endPos}
 }
 
-func (p *parser) parseTableExpr() ast.Table {
-
+func (p *parser) parseTableExpr() ast.TableExpr {
+	switch p.tok {
+	case token.IDENT:
+		begin := p.pos
+		kind := p.tok
+		name := p.lit
+		p.next()
+		return ast.TableBasicLit{Begin: begin, Kind: kind, Name: name}
+	default:
+		// TODO mock return
+		p.next()
+		return ast.TableBasicLit{}
+	}
 }
 
 func (p *parser) parseWhere() ast.WhereClause {
