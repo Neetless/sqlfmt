@@ -17,6 +17,16 @@ type testData struct {
 func setTestData() []testData {
 	var testSet []testData
 	testSet = []testData{
+		testData{testSQL: `select key from tbl GROUP BY key`,
+			expect: ast.SelectStmt{
+				Begin: 1,
+				Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{&ast.Column{
+					Value: ast.Ident{LitPos: 8, Lit: "key", Kind: token.IDENT}, Alias: "", EndPos: 11}}},
+				From: ast.FromClause{Begin: 12, Tables: []*ast.Table{&ast.Table{
+					Value: ast.TableBasicLit{Begin: 17, Kind: token.IDENT, Name: "tbl"}, Alias: "", EndPos: 20}}},
+				Where:   ast.WhereClause{Exists: false},
+				Groupby: ast.GroupbyClause{Begin: 21, ByPos: 27, Exists: true, Groups: []ast.Expr{ast.Ident{LitPos: 30, Kind: token.IDENT, Lit: "key"}}}},
+		},
 		testData{testSQL: `select count(*) from tbl;`,
 			expect: ast.SelectStmt{
 				Begin: 1,

@@ -21,6 +21,9 @@ const (
 	SELECT
 	FROM
 	WHERE
+	GROUP
+	ORDER
+	BY
 	ALIAS
 	NOT // not
 	AND // and
@@ -64,6 +67,9 @@ var tokens = [...]string{
 	SELECT: "SELECT",
 	FROM:   "FROM",
 	WHERE:  "WHERE",
+	GROUP:  "GROUP",
+	ORDER:  "ORDER",
+	BY:     "BY",
 	ALIAS:  "AS",
 
 	ASTA:      "*",

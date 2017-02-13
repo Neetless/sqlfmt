@@ -85,15 +85,12 @@ func parse(src []byte, filename string) (ast.Stmt, error) {
 }
 
 func (p *parser) parseStmt() (ast.Stmt, error) {
-	pos, tok, lit := p.scanner.Scan()
-	p.pos = pos
-	p.tok = tok
-	p.lit = lit
+	p.next()
 
-	switch tok {
+	switch p.tok {
 	case token.SELECT:
 		stmt := ast.SelectStmt{
-			Begin: pos,
+			Begin: p.pos,
 		}
 		slctstmt := p.parseSelect()
 		stmt.Select = slctstmt
@@ -103,6 +100,9 @@ func (p *parser) parseStmt() (ast.Stmt, error) {
 
 		where := p.parseWhere()
 		stmt.Where = where
+
+		groupby := p.parseGroupby()
+		stmt.Groupby = groupby
 
 		return stmt, nil
 
@@ -151,8 +151,7 @@ L:
 		case token.COMMA:
 			p.next()
 			continue
-		// TODO implement token.GROUPBY, token.ORDERBY
-		case token.WHERE, token.EOF, token.SEMICOLON:
+		case token.WHERE, token.EOF, token.SEMICOLON, token.GROUP, token.ORDER:
 			break L
 		default:
 			tbl := p.parseTable()
@@ -200,6 +199,35 @@ func (p *parser) parseWhere() ast.WhereClause {
 	expr := p.parseExpr()
 
 	clus.CondExpr = expr
+	return clus
+}
+
+func (p *parser) parseGroupby() ast.GroupbyClause {
+	pos := p.pos
+	exist := p.expect(token.GROUP)
+	if !exist {
+		return ast.GroupbyClause{Exists: false}
+	}
+	if !p.expect(token.BY) {
+		panic("parser expect BY token. but got " + p.tok.String())
+	}
+	clus := ast.GroupbyClause{Begin: pos, ByPos: p.pos, Exists: true}
+	var groups []ast.Expr
+L:
+	for {
+		switch p.tok {
+		case token.EOF, token.ORDER:
+			p.next()
+			break L
+		case token.COMMA:
+			p.next()
+			continue
+		default:
+			groups = append(groups, p.parseExpr())
+		}
+	}
+
+	clus.Groups = groups
 	return clus
 }
 

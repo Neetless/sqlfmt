@@ -21,10 +21,11 @@ type DataMnpltStmt struct {
 
 // SelectStmt represents a select statement.
 type SelectStmt struct {
-	Begin  token.Pos
-	Select SelectClause
-	From   FromClause
-	Where  WhereClause
+	Begin   token.Pos
+	Select  SelectClause
+	From    FromClause
+	Where   WhereClause
+	Groupby GroupbyClause
 }
 
 func (s SelectStmt) stmtNode() {
@@ -38,10 +39,14 @@ func (s SelectStmt) Pos() token.Pos {
 // End is implmentation for Node interface.
 func (s SelectStmt) End() token.Pos {
 	//TODO Last component for SelectStmt is not determined.
-	if s.Where.Exists {
+	switch {
+	case s.Groupby.Exists:
+		return s.Groupby.End()
+	case s.Where.Exists:
 		return s.Where.End()
+	default:
+		return s.From.End()
 	}
-	return s.From.End()
 }
 
 // Clause represents any clause node.
@@ -116,6 +121,36 @@ func (w WhereClause) End() token.Pos {
 		return 0
 	}
 	return w.CondExpr.End()
+}
+
+// GroupbyClause represents where clause node.
+type GroupbyClause struct {
+	Node
+	Begin  token.Pos
+	ByPos  token.Pos
+	Groups []Expr
+	Exists bool
+}
+
+func (g GroupbyClause) clauseNode() {}
+
+// Pos is implementation of Node interface.
+func (g GroupbyClause) Pos() token.Pos {
+	if !g.Exists {
+		return 0
+	}
+	return g.Begin
+}
+
+// End is implementation of Node interface.
+func (g GroupbyClause) End() token.Pos {
+	if !g.Exists {
+		return 0
+	}
+	if len(g.Groups) == 0 {
+		panic("Groupby must have 1 or more groups.")
+	}
+	return g.Groups[len(g.Groups)-1].End()
 }
 
 // Table contains a table factors.
