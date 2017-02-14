@@ -26,6 +26,7 @@ type SelectStmt struct {
 	From    FromClause
 	Where   WhereClause
 	Groupby GroupbyClause
+	Orderby OrderbyClause
 }
 
 func (s SelectStmt) stmtNode() {
@@ -151,6 +152,36 @@ func (g GroupbyClause) End() token.Pos {
 		panic("Groupby must have 1 or more groups.")
 	}
 	return g.Groups[len(g.Groups)-1].End()
+}
+
+// OrderbyClause represents where clause node.
+type OrderbyClause struct {
+	Node
+	Begin  token.Pos
+	ByPos  token.Pos
+	Orders []Expr
+	Exists bool
+}
+
+func (o OrderbyClause) clauseNode() {}
+
+// Pos is implementation of Node interface.
+func (o OrderbyClause) Pos() token.Pos {
+	if !o.Exists {
+		return 0
+	}
+	return o.Begin
+}
+
+// End is implementation of Node interface.
+func (o OrderbyClause) End() token.Pos {
+	if !o.Exists {
+		return 0
+	}
+	if len(o.Orders) == 0 {
+		panic("Orderby must have 1 or more groups.")
+	}
+	return o.Orders[len(o.Orders)-1].End()
 }
 
 // Table contains a table factors.

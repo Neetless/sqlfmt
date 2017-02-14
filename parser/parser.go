@@ -104,6 +104,9 @@ func (p *parser) parseStmt() (ast.Stmt, error) {
 		groupby := p.parseGroupby()
 		stmt.Groupby = groupby
 
+		orderby := p.parseOrderby()
+		stmt.Orderby = orderby
+
 		return stmt, nil
 
 	default:
@@ -231,6 +234,34 @@ L:
 	return clus
 }
 
+func (p *parser) parseOrderby() ast.OrderbyClause {
+	pos := p.pos
+	exist := p.expect(token.ORDER)
+	if !exist {
+		return ast.OrderbyClause{Exists: false}
+	}
+	if !p.expect(token.BY) {
+		panic("parser expect BY token. but got " + p.tok.String())
+	}
+	clus := ast.OrderbyClause{Begin: pos, ByPos: p.pos, Exists: true}
+	var orders []ast.Expr
+L:
+	for {
+		switch p.tok {
+		case token.EOF:
+			p.next()
+			break L
+		case token.COMMA:
+			p.next()
+			continue
+		default:
+			orders = append(orders, p.parseExpr())
+		}
+	}
+
+	clus.Orders = orders
+	return clus
+}
 func (p *parser) parseExpr() ast.Expr {
 	return p.parseBinaryExpr(token.LowestPrec + 1)
 }
