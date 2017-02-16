@@ -250,6 +250,70 @@ type Expr interface {
 	exprNode()
 }
 
+// CaseExpr represent case expression.
+// select case code when '0' then '1' else '2' end from tbl
+type CaseExpr struct {
+	Begin        token.Pos
+	HasSwitchKey bool
+	SwitchKey    Expr
+	Whens        []*WhenClause
+	Else         ElseClause
+	EndPos       token.Pos
+}
+
+func (c CaseExpr) exprNode() {}
+
+// Pos returns initial position.
+func (c CaseExpr) Pos() token.Pos {
+	return c.Begin
+}
+
+// End returns last position.
+func (c CaseExpr) End() token.Pos {
+	return c.EndPos + token.Pos(len(token.END.String()))
+}
+
+// WhenClause represents when part of case expression.
+type WhenClause struct {
+	Begin      token.Pos
+	CondExpr   Expr
+	ThenPos    token.Pos
+	ResultExpr Expr
+}
+
+// Pos returns initial position.
+func (w WhenClause) Pos() token.Pos {
+	return w.Begin
+}
+
+// End returns last position.
+func (w WhenClause) End() token.Pos {
+	return w.ResultExpr.End()
+}
+
+// ElseClause represents else part of case expression.
+type ElseClause struct {
+	Begin      token.Pos
+	ResultExpr Expr
+	Exists     bool
+}
+
+// Pos returns initial position.
+func (e ElseClause) Pos() token.Pos {
+	if !e.Exists {
+		return 0
+	}
+	return e.Begin
+}
+
+// End returns last position.
+func (e ElseClause) End() token.Pos {
+	if !e.Exists {
+		return 0
+	}
+	return e.ResultExpr.End()
+}
+
 // CallExpr represent function call expression.
 type CallExpr struct {
 	Begin    token.Pos

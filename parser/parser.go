@@ -324,8 +324,72 @@ func (p *parser) parseUnaryExpr() ast.Expr {
 		pos := p.pos
 		p.next()
 		return ast.BasicLit{Begin: pos, Value: "*", Kind: token.ASTA}
+	case token.CASE:
+		return p.parseCaseExpr()
 	}
 	return p.parsePrimaryExpr()
+}
+
+func (p *parser) parseCaseExpr() ast.CaseExpr {
+	begin := p.pos
+	if !p.expect(token.CASE) {
+		panic("parser expects CASE token. but got " + p.tok.String())
+	}
+
+	var key ast.Expr
+	switchKeyExists := false
+	if p.tok != token.WHEN {
+		switchKeyExists = true
+		key = p.parseExpr()
+	}
+
+	var whens []*ast.WhenClause
+L:
+	for {
+		switch p.tok {
+		case token.WHEN:
+			w := p.parseWhenClause()
+			whens = append(whens, w)
+			// whens = append(whens, p.parseWhenClause())
+		case token.ELSE, token.END:
+			break L
+		default:
+			panic("paraser expect WHEN, ELSE, END token. but got " + p.tok.String())
+		}
+	}
+
+	elseClus := ast.ElseClause{Exists: false}
+	maybeElsePos := p.pos
+	if p.expect(token.ELSE) {
+		elseClus.Begin = maybeElsePos
+		elseClus.Exists = true
+		elseClus.ResultExpr = p.parseExpr()
+	}
+
+	endPos := p.pos
+	if !p.expect(token.END) {
+		panic("parser expects END token. but got " + p.tok.String())
+	}
+
+	return ast.CaseExpr{Begin: begin, HasSwitchKey: switchKeyExists, SwitchKey: key, Whens: whens, Else: elseClus, EndPos: endPos}
+}
+
+func (p *parser) parseWhenClause() *ast.WhenClause {
+	begin := p.pos
+	if !p.expect(token.WHEN) {
+		panic("parser expects WHEN token. but got " + p.tok.String())
+	}
+
+	cond := p.parseExpr()
+
+	thenPos := p.pos
+	if !p.expect(token.THEN) {
+		panic("parser expects THEN token. but got " + p.tok.String())
+	}
+
+	result := p.parseExpr()
+
+	return &ast.WhenClause{Begin: begin, CondExpr: cond, ThenPos: thenPos, ResultExpr: result}
 }
 
 func (p *parser) parsePrimaryExpr() ast.Expr {
@@ -374,8 +438,10 @@ func (p *parser) parsePrimaryExpr() ast.Expr {
 		}
 
 		return ast.Ident{TblName: tbl, LitPos: pos, Kind: kind, Lit: lit}
-	case token.STRING:
-		return ast.BasicLit{Begin: p.pos, Value: p.lit, Kind: p.tok}
+	case token.STRING, token.INT:
+		blit := ast.BasicLit{Begin: p.pos, Value: p.lit, Kind: p.tok}
+		p.next()
+		return blit
 	}
 
 	// TODO mock return

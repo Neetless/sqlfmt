@@ -35,6 +35,17 @@ type testSet struct {
 
 func TestScan(t *testing.T) {
 	ts := []testSet{
+		testSet{given: []byte("1 11"), expect: []scanSet{
+			scanSet{tok: token.INT, pos: 1, lit: "1"},
+			scanSet{tok: token.INT, pos: 3, lit: "11"},
+		}},
+		testSet{given: []byte("CASE WHEN THEN ELSE END"), expect: []scanSet{
+			scanSet{tok: token.CASE, pos: 1, lit: "CASE"},
+			scanSet{tok: token.WHEN, pos: 6, lit: "WHEN"},
+			scanSet{tok: token.THEN, pos: 11, lit: "THEN"},
+			scanSet{tok: token.ELSE, pos: 16, lit: "ELSE"},
+			scanSet{tok: token.END, pos: 21, lit: "END"},
+		}},
 		testSet{given: []byte("()"), expect: []scanSet{
 			scanSet{tok: token.LPAREN, pos: 1, lit: "("},
 			scanSet{tok: token.RPAREN, pos: 2, lit: ")"},

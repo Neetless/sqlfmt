@@ -17,6 +17,70 @@ type testData struct {
 func setTestData() []testData {
 	var testSet []testData
 	testSet = []testData{
+		testData{testSQL: `select case
+when code > 1 then '1'
+when code < 2 then '2' end from tbl`,
+			expect: ast.SelectStmt{
+				Begin: 1,
+				Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{
+					&ast.Column{
+						Value: ast.CaseExpr{
+							Begin:        8,
+							HasSwitchKey: false,
+							Whens: []*ast.WhenClause{
+								&ast.WhenClause{
+									Begin:      13,
+									CondExpr:   ast.BinaryExpr{X: ast.Ident{TblName: "", LitPos: 18, Kind: token.IDENT, Lit: "code"}, OpPos: 22, Op: token.GTR, Y: ast.BasicLit{Begin: 25, Value: "1", Kind: token.INT}},
+									ThenPos:    27,
+									ResultExpr: ast.BasicLit{Begin: 32, Value: "'1'", Kind: token.STRING},
+								},
+								&ast.WhenClause{
+									Begin:      36,
+									CondExpr:   ast.BinaryExpr{X: ast.Ident{TblName: "", LitPos: 41, Kind: token.IDENT, Lit: "code"}, OpPos: 46, Op: token.LSS, Y: ast.BasicLit{Begin: 48, Value: "2", Kind: token.INT}},
+									ThenPos:    50,
+									ResultExpr: ast.BasicLit{Begin: 55, Value: "'2'", Kind: token.STRING},
+								},
+							},
+							EndPos: 59,
+						},
+						Alias:  "",
+						EndPos: 62,
+					},
+				}},
+				From:    ast.FromClause{Begin: 63, Tables: []*ast.Table{&ast.Table{Value: ast.TableBasicLit{Begin: 68, Kind: token.IDENT, Name: "tbl"}, Alias: "", EndPos: 71}}},
+				Where:   ast.WhereClause{Exists: false},
+				Groupby: ast.GroupbyClause{Exists: false},
+				Orderby: ast.OrderbyClause{Exists: false},
+			},
+		},
+		testData{testSQL: `select case code when '0' then '1' else '2' end from tbl`,
+			expect: ast.SelectStmt{
+				Begin: 1,
+				Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{
+					&ast.Column{
+						Value: ast.CaseExpr{
+							Begin:        8,
+							HasSwitchKey: true,
+							SwitchKey:    ast.Ident{TblName: "", LitPos: 13, Kind: token.IDENT, Lit: "code"},
+							Whens: []*ast.WhenClause{&ast.WhenClause{
+								Begin:      18,
+								CondExpr:   ast.BasicLit{Begin: 23, Value: "'0'", Kind: token.STRING},
+								ThenPos:    27,
+								ResultExpr: ast.BasicLit{Begin: 32, Value: "'1'", Kind: token.STRING},
+							}},
+							Else:   ast.ElseClause{Begin: 36, ResultExpr: ast.BasicLit{Begin: 41, Value: "'2'", Kind: token.STRING}, Exists: true},
+							EndPos: 45,
+						},
+						Alias:  "",
+						EndPos: 48,
+					},
+				}},
+				From:    ast.FromClause{Begin: 49, Tables: []*ast.Table{&ast.Table{Value: ast.TableBasicLit{Begin: 54, Kind: token.IDENT, Name: "tbl"}, Alias: "", EndPos: 57}}},
+				Where:   ast.WhereClause{Exists: false},
+				Groupby: ast.GroupbyClause{Exists: false},
+				Orderby: ast.OrderbyClause{Exists: false},
+			},
+		},
 		testData{testSQL: `select score from tbl order by score`,
 			expect: ast.SelectStmt{
 				Begin:   1,
@@ -474,6 +538,31 @@ func exprEqualTest(actual, expect ast.Expr, t *testing.T) {
 		for ix, actualArg := range actualExpr.Args {
 			exprEqualTest(actualArg, expectExpr.Args[ix], t)
 		}
+	case ast.CaseExpr:
+		actualExpr, ok := actual.(ast.CaseExpr)
+		if !ok {
+			t.Fatal("actual type is not ast.CaseExpr. ", typemsg)
+		}
+
+		if actualExpr.HasSwitchKey != expectExpr.HasSwitchKey {
+			t.Fatal("case expression switch key exisitance is incorrect. actual: ", actualExpr.HasSwitchKey, " expect: ", expectExpr.HasSwitchKey)
+		}
+		if actualExpr.HasSwitchKey {
+			exprEqualTest(actualExpr.SwitchKey, expectExpr.SwitchKey, t)
+		}
+
+		for ix, actualWhen := range actualExpr.Whens {
+			posEqualTest(actualWhen, expectExpr.Whens[ix], t)
+			exprEqualTest(actualWhen.CondExpr, expectExpr.Whens[ix].CondExpr, t)
+			if actualWhen.ThenPos != expectExpr.Whens[ix].ThenPos {
+				t.Fatal(ix, "th actual when's then position is incorrect. ")
+			}
+		}
+
+		if actualExpr.Else.Exists != expectExpr.Else.Exists {
+			t.Fatal("case else exists boolean is incorrect. actual ", actualExpr.Else.Exists, " expect ", expectExpr.Else.Exists)
+		}
+
 	default:
 		t.Fatal("Unexpected type the expected expr has. " + typemsg)
 	}

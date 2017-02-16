@@ -91,6 +91,8 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 			// insertSemi = true
 			tok = token.IDENT
 		}
+	case isDigit(ch):
+		lit, tok = s.scanNumber()
 	case ch == '\'':
 		tok = token.STRING
 		lit = s.scanString()
@@ -121,6 +123,10 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 			// TODO peak next ch and check >= case.
 			tok = token.GTR
 			lit = ">"
+		case '<':
+			// TODO peak next ch and check >= case.
+			tok = token.LSS
+			lit = "<"
 		case '.':
 			tok = token.PERIOD
 			lit = "."
@@ -146,6 +152,14 @@ func (s *Scanner) scanString() string {
 	}
 	s.next()
 	return string(s.src[offs:s.offset])
+}
+
+func (s *Scanner) scanNumber() (string, token.Token) {
+	offs := s.offset
+	for isDigit(s.ch) {
+		s.next()
+	}
+	return string(s.src[offs:s.offset]), token.INT
 }
 
 func (s *Scanner) scanIdentifier() string {

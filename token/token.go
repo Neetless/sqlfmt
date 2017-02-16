@@ -25,6 +25,11 @@ const (
 	ORDER
 	BY
 	ALIAS
+	CASE
+	WHEN
+	THEN
+	ELSE
+	END
 	NOT // not
 	AND // and
 	OR  // or
@@ -71,6 +76,11 @@ var tokens = [...]string{
 	ORDER:  "ORDER",
 	BY:     "BY",
 	ALIAS:  "AS",
+	CASE:   "CASE",
+	WHEN:   "WHEN",
+	THEN:   "THEN",
+	ELSE:   "ELSE",
+	END:    "END",
 
 	ASTA:      "*",
 	ADD:       "+",
