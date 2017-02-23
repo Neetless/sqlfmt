@@ -11,6 +11,7 @@ type Token int
 // This const block define each tokens value.
 const (
 	ILLEGAL Token = iota
+	NILL          // Used for not existing token in AST node.
 
 	IDENT
 	INT
