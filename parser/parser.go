@@ -300,6 +300,15 @@ func (p *parser) parseColumn() ast.Column {
 
 func (p *parser) parseBinaryExpr(prec1 int) ast.Expr {
 	x := p.parseUnaryExpr()
+	maybeIsPos := p.pos
+	if p.expect(token.IS) {
+		nullPos := p.pos
+		if p.expect(token.NULL) {
+			x = ast.IsNullExpr{Value: x, IsPos: maybeIsPos, NullPos: nullPos}
+		} else {
+			panic("parser expecte NULL token but got " + p.tok.String())
+		}
+	}
 	for {
 		op, opPrec := p.tokPrec()
 		if opPrec < prec1 {

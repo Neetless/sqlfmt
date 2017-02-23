@@ -33,6 +33,8 @@ const (
 	NOT // not
 	AND // and
 	OR  // or
+	IS
+	NULL
 	keywordEnd
 
 	operatorBeg
@@ -81,6 +83,10 @@ var tokens = [...]string{
 	THEN:   "THEN",
 	ELSE:   "ELSE",
 	END:    "END",
+	AND:    "AND",
+	OR:     "OR",
+	IS:     "IS",
+	NULL:   "NULL",
 
 	ASTA:      "*",
 	ADD:       "+",
@@ -95,8 +101,6 @@ var tokens = [...]string{
 	SEMICOLON: ";",
 	COMMA:     ",",
 	PERIOD:    ".",
-	AND:       "AND",
-	OR:        "OR",
 }
 
 var keywords map[string]Token

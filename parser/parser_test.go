@@ -17,6 +17,14 @@ type testData struct {
 func setTestData() []testData {
 	var testSet []testData
 	testSet = []testData{
+		testData{testSQL: `select c from t where t.v is null`,
+			expect: ast.SelectStmt{Begin: 1, Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{&ast.Column{Value: ast.Ident{TblName: "", LitPos: 8, Kind: token.IDENT, Lit: "c"}, Alias: "", EndPos: 9}}},
+				From:    ast.FromClause{Begin: 10, Tables: []*ast.Table{&ast.Table{Value: ast.TableBasicLit{Begin: 15, Kind: token.IDENT, Name: "t"}, Alias: "", EndPos: 16}}},
+				Where:   ast.WhereClause{Begin: 17, CondExpr: ast.IsNullExpr{Value: ast.Ident{TblName: "t", LitPos: 23, Kind: token.IDENT, Lit: "v"}, IsPos: 27, NullPos: 30}, Exists: true},
+				Groupby: ast.GroupbyClause{Exists: false},
+				Orderby: ast.OrderbyClause{Exists: false},
+			},
+		},
 		testData{testSQL: `select case
 when code > 1 then '1'
 when code < 2 then '2' end from tbl`,
@@ -561,6 +569,21 @@ func exprEqualTest(actual, expect ast.Expr, t *testing.T) {
 
 		if actualExpr.Else.Exists != expectExpr.Else.Exists {
 			t.Fatal("case else exists boolean is incorrect. actual ", actualExpr.Else.Exists, " expect ", expectExpr.Else.Exists)
+		}
+
+	case ast.IsNullExpr:
+		actualExpr, ok := actual.(ast.IsNullExpr)
+		if !ok {
+			t.Fatal("actual type is not ast.IsNullExpr. ", typemsg)
+		}
+		exprEqualTest(actualExpr.Value, expectExpr.Value, t)
+
+		if actualExpr.IsPos != expectExpr.IsPos {
+			t.Fatal("actual is null expression has incorrect is token position. actual ", actualExpr.IsPos, " expect ", expectExpr.IsPos)
+		}
+
+		if actualExpr.NullPos != expectExpr.NullPos {
+			t.Fatal("actual is null expression has incorrect null token position. actual ", actualExpr.NullPos, " expect ", expectExpr.NullPos)
 		}
 
 	default:

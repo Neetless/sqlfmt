@@ -250,6 +250,25 @@ type Expr interface {
 	exprNode()
 }
 
+// IsNullExpr represent is null expression.
+type IsNullExpr struct {
+	Value   Expr
+	IsPos   token.Pos
+	NullPos token.Pos
+}
+
+func (i IsNullExpr) exprNode() {}
+
+// Pos returns initial position.
+func (i IsNullExpr) Pos() token.Pos {
+	return i.Value.Pos()
+}
+
+// End returns last position.
+func (i IsNullExpr) End() token.Pos {
+	return i.NullPos + token.Pos(len(token.NULL.String()))
+}
+
 // CaseExpr represent case expression.
 // select case code when '0' then '1' else '2' end from tbl
 type CaseExpr struct {
