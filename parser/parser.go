@@ -447,7 +447,7 @@ func (p *parser) parsePrimaryExpr() ast.Expr {
 		}
 
 		return ast.Ident{TblName: tbl, LitPos: pos, Kind: kind, Lit: lit}
-	case token.STRING, token.INT:
+	case token.STRING, token.INT, token.REAL:
 		blit := ast.BasicLit{Begin: p.pos, Value: p.lit, Kind: p.tok}
 		p.next()
 		return blit

@@ -101,6 +101,15 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 		switch ch {
 		case -1:
 			tok = token.EOF
+		case '+', '-':
+			// TODO other newline code
+			if s.ch != ' ' && s.ch != '\n' {
+				lit, tok = s.scanNumber()
+				lit = string(ch) + lit
+			} else {
+				tok = token.Lookup(string(ch))
+				lit = string(ch)
+			}
 		case '*':
 			tok = token.MUL
 			lit = "*"
@@ -156,10 +165,31 @@ func (s *Scanner) scanString() string {
 
 func (s *Scanner) scanNumber() (string, token.Token) {
 	offs := s.offset
-	for isDigit(s.ch) {
+	gotDot := false
+	gotExp := false
+	tok := token.INT
+L:
+	for {
+		switch {
+		case isDigit(s.ch):
+		case s.ch == '.':
+			if gotDot {
+				panic("got dot twice while scanning number.")
+			}
+			gotDot = true
+			tok = token.REAL
+		case s.ch == 'e' || s.ch == 'E':
+			if gotExp {
+				panic("got exponential sign twice while scanning number.")
+			}
+			gotExp = true
+			tok = token.REAL
+		default:
+			break L
+		}
 		s.next()
 	}
-	return string(s.src[offs:s.offset]), token.INT
+	return string(s.src[offs:s.offset]), tok
 }
 
 func (s *Scanner) scanIdentifier() string {

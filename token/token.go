@@ -14,6 +14,7 @@ const (
 
 	IDENT
 	INT
+	REAL
 	ASTA
 	STRING
 
@@ -69,6 +70,7 @@ var tokens = [...]string{
 
 	IDENT:  "IDENT",
 	INT:    "INT",
+	REAL:   "REAL",
 	STRING: "STRING",
 
 	SELECT: "SELECT",
