@@ -17,6 +17,25 @@ type testData struct {
 func setTestData() []testData {
 	var testSet []testData
 	testSet = []testData{
+		testData{testSQL: `select * from a natural left outer join b`,
+			expect: ast.SelectStmt{},
+		},
+		testData{testSQL: `select * from a join b`,
+			expect: ast.SelectStmt{Begin: 1, Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{&ast.Column{Value: ast.BasicLit{Begin: 8, Value: "*", Kind: token.ASTA}, Alias: "", EndPos: 9}}},
+				From: ast.FromClause{Begin: 10, Tables: []*ast.Table{&ast.Table{
+					Value: ast.JoinedTable{Left: ast.TableBasicLit{Begin: 15, Kind: token.IDENT, Name: "a"},
+						Kind: token.NILL, JoinType: token.NILL, OuterJoinType: token.NILL,
+						JoinPos: 999,
+						Right:   ast.TableBasicLit{Begin: 15, Kind: token.IDENT, Name: "b"},
+					},
+					Alias:  "",
+					EndPos: 23,
+				}}},
+				Where:   ast.WhereClause{Exists: false},
+				Groupby: ast.GroupbyClause{Exists: false},
+				Orderby: ast.OrderbyClause{Exists: false},
+			},
+		},
 		testData{testSQL: `select c from t where t.v is null`,
 			expect: ast.SelectStmt{Begin: 1, Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{&ast.Column{Value: ast.Ident{TblName: "", LitPos: 8, Kind: token.IDENT, Lit: "c"}, Alias: "", EndPos: 9}}},
 				From:    ast.FromClause{Begin: 10, Tables: []*ast.Table{&ast.Table{Value: ast.TableBasicLit{Begin: 15, Kind: token.IDENT, Name: "t"}, Alias: "", EndPos: 16}}},

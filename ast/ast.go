@@ -203,6 +203,31 @@ type TableExpr interface {
 	tableExprNode()
 }
 
+// JoinedTable represents joined table.
+type JoinedTable struct {
+	Left             TableExpr
+	JoinPos          token.Pos
+	Kind             token.Token // CROSS, UNION, NATURAL, NILL
+	KindPos          token.Pos
+	JoinType         token.Token // INNER, OUTER, NILL
+	JoinTypePos      token.Pos
+	OuterJoinType    token.Token // LEFT, RIGHT, FULL, NILL
+	OuterJoinTypePos token.Pos
+	Right            TableExpr
+}
+
+func (j JoinedTable) tableExprNode() {}
+
+// Pos returns initial position.
+func (j JoinedTable) Pos() token.Pos {
+	return j.Left.Pos()
+}
+
+// End returns last position.
+func (j JoinedTable) End() token.Pos {
+	return j.Right.End()
+}
+
 // TableBasicLit represents one table name.
 type TableBasicLit struct {
 	Begin token.Pos
