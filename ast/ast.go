@@ -192,14 +192,10 @@ type Table struct {
 }
 
 // Pos returns the first position.
-func (t Table) Pos() token.Pos {
-	return t.Value.Pos()
-}
+func (t Table) Pos() token.Pos { return t.Value.Pos() }
 
 // End returns the last position.
-func (t Table) End() token.Pos {
-	return t.EndPos
-}
+func (t Table) End() token.Pos { return t.EndPos }
 
 // TableExpr represents a table expression in from clause.
 type TableExpr interface {
@@ -217,14 +213,10 @@ type TableBasicLit struct {
 func (t TableBasicLit) tableExprNode() {}
 
 // Pos is for Nore interface implementetion.
-func (t TableBasicLit) Pos() token.Pos {
-	return t.Begin
-}
+func (t TableBasicLit) Pos() token.Pos { return t.Begin }
 
 // End is for Node interface implementation.
-func (t TableBasicLit) End() token.Pos {
-	return t.Begin + token.Pos(len(t.Name))
-}
+func (t TableBasicLit) End() token.Pos { return t.Begin + token.Pos(len(t.Name)) }
 
 // Column represents a column of table.
 type Column struct {
@@ -235,14 +227,10 @@ type Column struct {
 }
 
 // Pos returns the position of a column.
-func (c Column) Pos() token.Pos {
-	return c.Value.Pos()
-}
+func (c Column) Pos() token.Pos { return c.Value.Pos() }
 
 // End returns the end postion of a column.
-func (c Column) End() token.Pos {
-	return c.EndPos
-}
+func (c Column) End() token.Pos { return c.EndPos }
 
 // Expr represent a expression in a column.
 type Expr interface {
@@ -260,14 +248,10 @@ type IsNullExpr struct {
 func (i IsNullExpr) exprNode() {}
 
 // Pos returns initial position.
-func (i IsNullExpr) Pos() token.Pos {
-	return i.Value.Pos()
-}
+func (i IsNullExpr) Pos() token.Pos { return i.Value.Pos() }
 
 // End returns last position.
-func (i IsNullExpr) End() token.Pos {
-	return i.NullPos + token.Pos(len(token.NULL.String()))
-}
+func (i IsNullExpr) End() token.Pos { return i.NullPos + token.Pos(len(token.NULL.String())) }
 
 // CaseExpr represent case expression.
 // select case code when '0' then '1' else '2' end from tbl
@@ -283,14 +267,10 @@ type CaseExpr struct {
 func (c CaseExpr) exprNode() {}
 
 // Pos returns initial position.
-func (c CaseExpr) Pos() token.Pos {
-	return c.Begin
-}
+func (c CaseExpr) Pos() token.Pos { return c.Begin }
 
 // End returns last position.
-func (c CaseExpr) End() token.Pos {
-	return c.EndPos + token.Pos(len(token.END.String()))
-}
+func (c CaseExpr) End() token.Pos { return c.EndPos + token.Pos(len(token.END.String())) }
 
 // WhenClause represents when part of case expression.
 type WhenClause struct {
@@ -301,14 +281,10 @@ type WhenClause struct {
 }
 
 // Pos returns initial position.
-func (w WhenClause) Pos() token.Pos {
-	return w.Begin
-}
+func (w WhenClause) Pos() token.Pos { return w.Begin }
 
 // End returns last position.
-func (w WhenClause) End() token.Pos {
-	return w.ResultExpr.End()
-}
+func (w WhenClause) End() token.Pos { return w.ResultExpr.End() }
 
 // ElseClause represents else part of case expression.
 type ElseClause struct {
@@ -345,14 +321,10 @@ type CallExpr struct {
 func (c CallExpr) exprNode() {}
 
 // Pos returns initial position according to offset.
-func (c CallExpr) Pos() token.Pos {
-	return c.Begin
-}
+func (c CallExpr) Pos() token.Pos { return c.Begin }
 
 // End returns last position according to offset.
-func (c CallExpr) End() token.Pos {
-	return c.Rparen + 1
-}
+func (c CallExpr) End() token.Pos { return c.Rparen + 1 }
 
 // BinaryExpr represents a binary expression.
 type BinaryExpr struct {
@@ -365,14 +337,10 @@ type BinaryExpr struct {
 func (b BinaryExpr) exprNode() {}
 
 // Pos implements Node interface.
-func (b BinaryExpr) Pos() token.Pos {
-	return b.X.Pos()
-}
+func (b BinaryExpr) Pos() token.Pos { return b.X.Pos() }
 
 // End implements Node interface.
-func (b BinaryExpr) End() token.Pos {
-	return b.Y.End()
-}
+func (b BinaryExpr) End() token.Pos { return b.Y.End() }
 
 // UnaryExpr represents a unary expression.
 type UnaryExpr struct {
@@ -384,14 +352,10 @@ type UnaryExpr struct {
 func (u UnaryExpr) exprNode() {}
 
 // Pos implements Node interface.
-func (u UnaryExpr) Pos() token.Pos {
-	return u.OpPos
-}
+func (u UnaryExpr) Pos() token.Pos { return u.OpPos }
 
 // End implements Node interface.
-func (u UnaryExpr) End() token.Pos {
-	return u.X.End()
-}
+func (u UnaryExpr) End() token.Pos { return u.X.End() }
 
 // BasicLit represents a basic literal expression.
 type BasicLit struct {
@@ -403,14 +367,10 @@ type BasicLit struct {
 func (b BasicLit) exprNode() {}
 
 // Pos implement Node interface.
-func (b BasicLit) Pos() token.Pos {
-	return b.Begin
-}
+func (b BasicLit) Pos() token.Pos { return b.Begin }
 
 // End implement Node interface.
-func (b BasicLit) End() token.Pos {
-	return b.Begin + token.Pos(len(b.Value))
-}
+func (b BasicLit) End() token.Pos { return b.Begin + token.Pos(len(b.Value)) }
 
 // Ident represents simple identifier for where clause.
 type Ident struct {
@@ -423,11 +383,26 @@ type Ident struct {
 func (i Ident) exprNode() {}
 
 // Pos implements Node interface.
-func (i Ident) Pos() token.Pos {
-	return i.LitPos
-}
+func (i Ident) Pos() token.Pos { return i.LitPos }
 
 // End implements Node interface.
-func (i Ident) End() token.Pos {
-	return i.LitPos + token.Pos(len(i.Lit))
+func (i Ident) End() token.Pos { return i.LitPos + token.Pos(len(i.Lit)) }
+
+// A Comment node represents a # style, -- style or /* style comment.
+type Comment struct {
+	Begin token.Pos // position of "#", "-" or "/" starting the comment
+	Text  string    // comment text (excluding '\n' for # style or -- style comments)
 }
+
+func (c *Comment) Pos() token.Pos { return c.Begin }
+func (c *Comment) End() token.Pos { return token.Pos(int(c.Begin) + len(c.Text)) }
+
+// A CommentGroup represents a sequence of comments
+// with no other tokens and no empty lines between.
+//
+type CommentGroup struct {
+	List []*Comment // len(List) > 0
+}
+
+func (g *CommentGroup) Pos() token.Pos { return g.List[0].Pos() }
+func (g *CommentGroup) End() token.Pos { return g.List[len(g.List)-1].End() }

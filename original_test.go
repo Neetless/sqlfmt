@@ -9,6 +9,8 @@ import (
 	"go/scanner"
 	"go/token"
 	"testing"
+
+	"github.com/k0kubun/pp"
 )
 
 func TestForDelve(t *testing.T) {
@@ -17,13 +19,18 @@ func TestForDelve(t *testing.T) {
 	source := []byte(`package main
 import "fmt"
 
+// comment 1
 func main() {
-	a := 10 * 20 - 5 * 7
+	a := 10 * 20 - 5 * 7 // comment 2
+	/*
+	block comment
+	*/
 	fmt.Println(a)
 }`)
 
 	// test run for delve debug
-	parser.ParseFile(fset, "example_test.go", source, parser.Trace)
+	f, _ := parser.ParseFile(fset, "example_test.go", source, parser.ParseComments|parser.Trace)
+	pp.Print(f)
 }
 
 func TestOriginalPackages(t *testing.T) {
