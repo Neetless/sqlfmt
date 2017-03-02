@@ -102,8 +102,14 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 		case -1:
 			tok = token.EOF
 		case '+', '-':
-			// TODO other newline code
-			if s.ch != ' ' && s.ch != '\n' {
+			// check COMMENT case
+			if ch == '-' && s.ch == '-' {
+				tok = token.COMMENT
+				comment := s.scanComment()
+				lit = comment
+
+				// TODO other newline code
+			} else if s.ch != ' ' && s.ch != '\n' {
 				lit, tok = s.scanNumber()
 				lit = string(ch) + lit
 			} else {
@@ -113,6 +119,16 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 		case '*':
 			tok = token.MUL
 			lit = "*"
+		case '/':
+			if s.ch == '*' {
+				tok = token.COMMENT
+				comment := s.scanComment()
+				lit = comment
+			} else {
+				tok = token.QUO
+				lit = "/"
+			}
+
 		case '(':
 			tok = token.LPAREN
 			lit = "("
@@ -139,6 +155,10 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 		case '.':
 			tok = token.PERIOD
 			lit = "."
+		case '#':
+			tok = token.COMMENT
+			comment := s.scanComment()
+			lit = comment
 		}
 	}
 	return
@@ -198,6 +218,22 @@ func (s *Scanner) scanIdentifier() string {
 		s.next()
 	}
 	return string(s.src[offs:s.offset])
+}
+
+func (s *Scanner) scanComment() string {
+	var offs int
+	isLongStyle := false
+	switch s.ch {
+	case '-':
+		offs = s.offset - 2
+	case '*':
+		offs = s.offset - 2
+		isLongStyle = true
+	default:
+		offs = s.offset - 1
+	}
+
+	return ""
 }
 
 // Read the next Unicode char into s.ch.

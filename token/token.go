@@ -12,6 +12,7 @@ type Token int
 const (
 	ILLEGAL Token = iota
 	NILL          // Used for not existing token in AST node.
+	COMMENT
 
 	IDENT
 	INT
@@ -60,13 +61,11 @@ const (
 	operatorEnd
 
 	EOF
-	COMMENT
 )
 
 var tokens = [...]string{
 	ILLEGAL: "ILLEGAL",
 	EOF:     "EOF",
-
 	COMMENT: "COMMENT",
 
 	IDENT:  "IDENT",
