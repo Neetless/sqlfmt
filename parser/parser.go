@@ -173,6 +173,7 @@ func (p *parser) parseTable() ast.Table {
 	alias := ""
 	endPos := expr.End()
 	// TODO implement implicit alias
+	// ?? oracle doesn't allow "AS" keyword ??
 	if p.expect(token.ALIAS) {
 		alias = p.lit
 		endPos = p.pos + token.Pos(len(alias))
@@ -182,18 +183,30 @@ func (p *parser) parseTable() ast.Table {
 }
 
 func (p *parser) parseTableExpr() ast.TableExpr {
+	var x ast.TableExpr
 	switch p.tok {
 	case token.IDENT:
 		begin := p.pos
 		kind := p.tok
 		name := p.lit
 		p.next()
-		return ast.TableBasicLit{Begin: begin, Kind: kind, Name: name}
+		x = ast.TableBasicLit{Begin: begin, Kind: kind, Name: name}
+
+		// maybe joined table
+		switch p.tok {
+		case token.UNION, token.CROSS, token.NATURAL:
+		case token.INNER, token.OUTER:
+		case token.RIGHT, token.LEFT, token.FULL:
+		}
+
+	case token.LPAREN:
+		// TODO sub-query parser
 	default:
 		// TODO mock return
 		p.next()
 		return ast.TableBasicLit{}
 	}
+	return x
 }
 
 func (p *parser) parseWhere() ast.WhereClause {

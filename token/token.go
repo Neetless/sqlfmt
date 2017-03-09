@@ -27,17 +27,29 @@ const (
 	GROUP
 	ORDER
 	BY
+
 	ALIAS
+
 	CASE
 	WHEN
 	THEN
 	ELSE
 	END
+
 	NOT // not
 	AND // and
 	OR  // or
 	IS
 	NULL
+
+	CROSS
+	UNION
+	NATURAL
+	INNER
+	OUTER
+	LEFT
+	RIGHT
+	FULL
 	keywordEnd
 
 	operatorBeg
@@ -89,6 +101,15 @@ var tokens = [...]string{
 	OR:     "OR",
 	IS:     "IS",
 	NULL:   "NULL",
+
+	CROSS:   "CROSS",
+	UNION:   "UNION",
+	NATURAL: "NATURAL",
+	INNER:   "INNER",
+	OUTER:   "OUTER",
+	LEFT:    "LEFT",
+	RIGHT:   "RIGHT",
+	FULL:    "FULL",
 
 	ASTA:      "*",
 	ADD:       "+",
