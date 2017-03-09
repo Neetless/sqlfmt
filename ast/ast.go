@@ -21,12 +21,13 @@ type DataMnpltStmt struct {
 
 // SelectStmt represents a select statement.
 type SelectStmt struct {
-	Begin   token.Pos
-	Select  SelectClause
-	From    FromClause
-	Where   WhereClause
-	Groupby GroupbyClause
-	Orderby OrderbyClause
+	Begin    token.Pos
+	Select   SelectClause
+	From     FromClause
+	Where    WhereClause
+	Groupby  GroupbyClause
+	Orderby  OrderbyClause
+	Comments []*CommentGroup
 }
 
 func (s SelectStmt) stmtNode() {
@@ -419,7 +420,10 @@ type Comment struct {
 	Text  string    // comment text (excluding '\n' for # style or -- style comments)
 }
 
+// Pos returns initial position of Comment.
 func (c *Comment) Pos() token.Pos { return c.Begin }
+
+// End returns last position of Comment.
 func (c *Comment) End() token.Pos { return token.Pos(int(c.Begin) + len(c.Text)) }
 
 // A CommentGroup represents a sequence of comments
@@ -429,5 +433,8 @@ type CommentGroup struct {
 	List []*Comment // len(List) > 0
 }
 
+// Pos returns initial position of CommentGroup.
 func (g *CommentGroup) Pos() token.Pos { return g.List[0].Pos() }
+
+// End returns last position of CommentGroup
 func (g *CommentGroup) End() token.Pos { return g.List[len(g.List)-1].End() }

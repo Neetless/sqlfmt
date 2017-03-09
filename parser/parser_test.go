@@ -17,6 +17,17 @@ type testData struct {
 func setTestData() []testData {
 	var testSet []testData
 	testSet = []testData{
+		testData{testSQL: `-- comment 1
+select c from t`,
+			expect: ast.SelectStmt{Begin: 14, Select: ast.SelectClause{Begin: 14, Cols: []*ast.Column{&ast.Column{Value: ast.Ident{TblName: "", LitPos: 21, Kind: token.IDENT, Lit: "c"}, Alias: "", EndPos: 22}}},
+				From:     ast.FromClause{Begin: 23, Tables: []*ast.Table{&ast.Table{Value: ast.TableBasicLit{Begin: 28, Kind: token.IDENT, Name: "t"}, Alias: "", EndPos: 29}}},
+				Where:    ast.WhereClause{Exists: false},
+				Groupby:  ast.GroupbyClause{Exists: false},
+				Orderby:  ast.OrderbyClause{Exists: false},
+				Comments: []*ast.CommentGroup{&ast.CommentGroup{List: []*ast.Comment{&ast.Comment{Begin: 1, Text: "-- comment 1"}}}},
+			},
+		},
+		/* TODO test joined table parser
 		testData{testSQL: `select * from a natural left outer join b`,
 			expect: ast.SelectStmt{},
 		},
@@ -36,6 +47,7 @@ func setTestData() []testData {
 				Orderby: ast.OrderbyClause{Exists: false},
 			},
 		},
+		*/
 		testData{testSQL: `select c from t where t.v is null`,
 			expect: ast.SelectStmt{Begin: 1, Select: ast.SelectClause{Begin: 1, Cols: []*ast.Column{&ast.Column{Value: ast.Ident{TblName: "", LitPos: 8, Kind: token.IDENT, Lit: "c"}, Alias: "", EndPos: 9}}},
 				From:    ast.FromClause{Begin: 10, Tables: []*ast.Table{&ast.Table{Value: ast.TableBasicLit{Begin: 15, Kind: token.IDENT, Name: "t"}, Alias: "", EndPos: 16}}},
@@ -341,6 +353,7 @@ func nodeEqualTest(actual, expect ast.Node, t *testing.T) {
 		clauseEqualTest(actualStmt.Select, expectStmt.Select, t)
 		clauseEqualTest(actualStmt.From, expectStmt.From, t)
 		clauseEqualTest(actualStmt.Where, expectStmt.Where, t)
+		commentGroupSliceEqualTest(actualStmt.Comments, expectStmt.Comments, t)
 	default:
 		t.Errorf("Expect's top level type is not correct.")
 	}
@@ -611,10 +624,42 @@ func exprEqualTest(actual, expect ast.Expr, t *testing.T) {
 
 }
 
+func commentGroupSliceEqualTest(actual, expect []*ast.CommentGroup, t *testing.T) {
+	if len(actual) != len(expect) {
+		t.Fatalf("actual len of []CommentGroup is incorrect. actual: %d, expect: %d", len(actual), len(expect))
+	}
+
+	for ix, actualCommentGroup := range actual {
+		expectCommentGroup := expect[ix]
+		if len(actualCommentGroup.List) != len(expectCommentGroup.List) {
+			t.Fatalf("actual len of CommentGroup.List is incorrect. actual: %d, expect: %d.", len(actual), len(expect))
+		}
+
+		posEqualTest(actualCommentGroup, expectCommentGroup, t)
+
+		for ix, actualComment := range actualCommentGroup.List {
+			expectComment := expectCommentGroup.List[ix]
+			posEqualTest(actualComment, expectComment, t)
+
+			if actualComment.Text != expectComment.Text {
+				t.Fatalf("actual comment text is incorrect. actual: %s, expect: %s.", actualComment.Text, expectComment.Text)
+			}
+		}
+	}
+}
+
 func posEqualTest(actual, expect ast.Node, t *testing.T) {
-	expectType := reflect.TypeOf(expect).Name()
-	actualType := reflect.TypeOf(actual).Name()
-	msg := fmt.Sprintf("types are actual: %s, expect: %s", actualType, expectType)
+	expectType := reflect.TypeOf(expect)
+	actualType := reflect.TypeOf(actual)
+	var expectTypeName, actualTypeName string
+	if expectType.Kind() == reflect.Ptr {
+		expectTypeName = expectType.Elem().Name()
+		actualTypeName = actualType.Elem().Name()
+	} else {
+		expectTypeName = expectType.Name()
+		actualTypeName = actualType.Name()
+	}
+	msg := fmt.Sprintf("types are actual: %s, expect: %s", actualTypeName, expectTypeName)
 	if actual.Pos() != expect.Pos() {
 		t.Fatalf(
 			"Node has different pos. actual: %d, expect: %d. "+msg,

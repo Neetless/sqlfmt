@@ -35,6 +35,13 @@ type testSet struct {
 
 func TestScan(t *testing.T) {
 	ts := []testSet{
+		testSet{given: []byte("/* comment 1\nline2 */"), expect: []scanSet{
+			scanSet{tok: token.COMMENT, pos: 1, lit: "/* comment 1\nline2 */"},
+		}},
+		testSet{given: []byte("-- comment 1\nselect"), expect: []scanSet{
+			scanSet{tok: token.COMMENT, pos: 1, lit: "-- comment 1"},
+			scanSet{tok: token.SELECT, pos: 14, lit: "select"},
+		}},
 		testSet{given: []byte("0.1 1.0E01"), expect: []scanSet{
 			scanSet{tok: token.REAL, pos: 1, lit: "0.1"},
 			scanSet{tok: token.REAL, pos: 5, lit: "1.0E01"},

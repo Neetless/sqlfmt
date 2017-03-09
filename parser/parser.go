@@ -28,6 +28,8 @@ type parser struct {
 	pos token.Pos
 	tok token.Token
 	lit string
+
+	comments []*ast.CommentGroup
 }
 
 // ParseFile parse sql statement from given file.
@@ -106,6 +108,8 @@ func (p *parser) parseStmt() (ast.Stmt, error) {
 
 		orderby := p.parseOrderby()
 		stmt.Orderby = orderby
+
+		stmt.Comments = p.comments
 
 		return stmt, nil
 
@@ -460,6 +464,33 @@ func (p *parser) parsePrimaryExpr() ast.Expr {
 
 func (p *parser) next() {
 	p.pos, p.tok, p.lit = p.scanner.Scan()
+	if p.tok == token.COMMENT {
+		p.consumeCommentGroup()
+	}
+}
+
+// increment parse without parsing comment.
+func (p *parser) next0() {
+	p.pos, p.tok, p.lit = p.scanner.Scan()
+}
+
+func (p *parser) consumeCommentGroup() {
+	var list []*ast.Comment
+
+	for p.tok == token.COMMENT {
+		var comment *ast.Comment
+		comment = p.consumeComment()
+		list = append(list, comment)
+	}
+
+	comments := &ast.CommentGroup{List: list}
+	p.comments = append(p.comments, comments)
+}
+
+func (p *parser) consumeComment() *ast.Comment {
+	comment := &ast.Comment{Begin: p.pos, Text: p.lit}
+	p.next0()
+	return comment
 }
 
 func (p *parser) tokPrec() (token.Token, int) {

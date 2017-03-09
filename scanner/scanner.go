@@ -103,7 +103,7 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 			tok = token.EOF
 		case '+', '-':
 			// check COMMENT case
-			if ch == '-' && s.ch == '-' {
+			if ch == '-' && s.ch == '-' && s.peak() == ' ' {
 				tok = token.COMMENT
 				comment := s.scanComment()
 				lit = comment
@@ -223,17 +223,34 @@ func (s *Scanner) scanIdentifier() string {
 func (s *Scanner) scanComment() string {
 	var offs int
 	isLongStyle := false
+
 	switch s.ch {
 	case '-':
-		offs = s.offset - 2
+		offs = s.offset - 1
 	case '*':
-		offs = s.offset - 2
+		offs = s.offset - 1
 		isLongStyle = true
 	default:
-		offs = s.offset - 1
+		offs = s.offset
 	}
 
-	return ""
+	if isLongStyle {
+		for {
+			if s.ch == '*' && s.peak() == '/' {
+				s.next()
+				s.next()
+				break
+			}
+			s.next()
+		}
+	} else {
+		// TODO deal with CR newline style.
+		for s.ch != '\n' && s.ch != -1 {
+			s.next()
+		}
+	}
+
+	return string(s.src[offs:s.offset])
 }
 
 // Read the next Unicode char into s.ch.
@@ -258,6 +275,14 @@ func (s *Scanner) next() {
 		}
 		s.ch = -1
 	}
+}
+
+// peak read the next Unicode char but this doesn't change scanner instance.
+func (s *Scanner) peak() rune {
+	if s.rdOffset < len(s.src) {
+		return rune(s.src[s.rdOffset])
+	}
+	return -1
 }
 
 func isLetter(ch rune) bool {
